@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCatch</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #e0f7fa;
+    }
+    canvas {
+      border: 2px solid #000;
+    }
+    .scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #333;
+      font-size: 20px;
+    }
+    .login {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="scoreboard">Score: <span id="score">0</span></div>
+  <div class="login">
+    <button onclick="login()">Login</button>
+  </div>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    let score = 0;
+    let basketX = canvas.width / 2 - 40;
+    const basketWidth = 80;
+    const basketHeight = 20;
+    const basketSpeed = 5;
+    let fallingObjects = [];
+    let isGameOver = false;
+
+    // Add falling objects
+    setInterval(() => {
+      if (!isGameOver) {
+        fallingObjects.push({
+          x: Math.random() * (canvas.width - 20),
+          y: 0,
+          size: 20,
+        });
+      }
+    }, 1000);
+
+    // Game loop
+    function gameLoop() {
+      if (isGameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw basket
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(basketX, canvas.height - basketHeight, basketWidth, basketHeight);
+
+      // Draw and move falling objects
+      ctx.fillStyle = 'red';
+      fallingObjects.forEach((obj, index) => {
+        obj.y += 2; // Falling speed
+        ctx.fillRect(obj.x, obj.y, obj.size, obj.size);
+
+        // Check collision
+        if (
+          obj.y + obj.size >= canvas.height - basketHeight &&
+          obj.x + obj.size > basketX &&
+          obj.x < basketX + basketWidth
+        ) {
+          score++;
+          scoreDisplay.textContent = score;
+          fallingObjects.splice(index, 1); // Remove object
+        } else if (obj.y > canvas.height) {
+          isGameOver = true;
+          alert(`Game Over! Your score: ${score}`);
+          saveScore(score); // Save score to the server
+        }
+      });
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Player movement
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') basketX = Math.max(0, basketX - basketSpeed);
+      if (event.key === 'ArrowRight') basketX = Math.min(canvas.width - basketWidth, basketX + basketSpeed);
+    });
+
+    // Save score to the server
+    function saveScore(score) {
+      fetch('/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: '1', score }),
+      }).then((res) => console.log('Score saved'));
+    }
+
+    function login() {
+      alert('Login functionality to be implemented.');
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>

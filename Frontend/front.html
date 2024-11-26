@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuickCatch</title>
+  <title>QuickCatch with Phaser</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -14,107 +15,170 @@
       height: 100vh;
       background-color: #e0f7fa;
     }
-    canvas {
+    #game-container {
       border: 2px solid #000;
-    }
-    .scoreboard {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: #333;
-      font-size: 20px;
-    }
-    .login {
-      position: absolute;
-      top: 10px;
-      right: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="scoreboard">Score: <span id="score">0</span></div>
-  <div class="login">
-    <button onclick="login()">Login</button>
-  </div>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="game-container"></div>
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('score');
-    let score = 0;
-    let basketX = canvas.width / 2 - 40;
-    const basketWidth = 80;
-    const basketHeight = 20;
-    const basketSpeed = 5;
-    let fallingObjects = [];
-    let isGameOver = false;
-
-    // Add falling objects
-    setInterval(() => {
-      if (!isGameOver) {
-        fallingObjects.push({
-          x: Math.random() * (canvas.width - 20),
-          y: 0,
-          size: 20,
-        });
+    const config = {
+      type: Phaser.AUTO,
+      width: 600, // Make the game pane wider (increase width)
+      height: 600,
+      parent: 'game-container',
+      backgroundColor: '#e0f7fa',
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 0 }, // No gravity for the basket
+          debug: false
+        },
+      },
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
       }
-    }, 1000);
+    };
 
-    // Game loop
-    function gameLoop() {
-      if (isGameOver) return;
+    const game = new Phaser.Game(config);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let basket;
+    let score = 0;
+    let hp = 3; // Max HP set to 3
+    let scoreText;
+    let hpText;
+    let isGameOver = false;
+    let fallingObjects;
+    let cursors;
+    let lastSpawnTime = 0;
+    const initialSpawnInterval = 1000; // Initial spawn interval for bananas
+    let spawnInterval = initialSpawnInterval;
+    const initialSpawnSpeed = 150; // Decreased speed of falling objects initially
 
-      // Draw basket
-      ctx.fillStyle = 'blue';
-      ctx.fillRect(basketX, canvas.height - basketHeight, basketWidth, basketHeight);
+    function preload() {
+      // Preload images
+      this.load.image('basket', 'Monkey.png');
+      this.load.image('banana', 'Banana.png');
+      this.load.image('potion', 'Potion.png'); // Load potion image
+    }
 
-      // Draw and move falling objects
-      ctx.fillStyle = 'red';
-      fallingObjects.forEach((obj, index) => {
-        obj.y += 2; // Falling speed
-        ctx.fillRect(obj.x, obj.y, obj.size, obj.size);
+    function create() {
+      // Initialize score, HP, and other game variables
+      score = 0;
+      hp = 3;
+      isGameOver = false;
 
-        // Check collision
-        if (
-          obj.y + obj.size >= canvas.height - basketHeight &&
-          obj.x + obj.size > basketX &&
-          obj.x < basketX + basketWidth
-        ) {
-          score++;
-          scoreDisplay.textContent = score;
-          fallingObjects.splice(index, 1); // Remove object
-        } else if (obj.y > canvas.height) {
-          isGameOver = true;
-          alert(`Game Over! Your score: ${score}`);
-          saveScore(score); // Save score to the server
+      // Score and HP text
+      scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#333' });
+      hpText = this.add.text(500, 10, 'HP: 3', { fontSize: '20px', fill: '#333' });
+
+      // Create basket and set physics
+      basket = this.physics.add.sprite(300, 580, 'basket').setImmovable();
+      basket.body.allowGravity = false;
+
+      // Set basket to be a square shape
+      basket.setDisplaySize(40, 40); // Set the basket size to be square (40x40)
+
+      // Create falling objects group
+      fallingObjects = this.physics.add.group();
+
+      // Collision detection between basket and falling objects
+      this.physics.add.collider(basket, fallingObjects, (basket, object) => {
+        if (object.texture.key === 'banana') {
+          score++; // Increase score when catching a banana
+          object.destroy();
+        } else if (object.texture.key === 'potion') {
+          if (hp < 3) {
+            hp++; // Increase HP but cap at 3
+            hpText.setText(`HP: ${hp}`);
+          }
+          object.destroy();
         }
+        scoreText.setText(`Score: ${score}`);
       });
 
-      requestAnimationFrame(gameLoop);
+      // Create input (left and right arrow keys)
+      cursors = this.input.keyboard.createCursorKeys();
     }
 
-    // Player movement
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') basketX = Math.max(0, basketX - basketSpeed);
-      if (event.key === 'ArrowRight') basketX = Math.min(canvas.width - basketWidth, basketX + basketSpeed);
-    });
+    function update(time, delta) {
+      // If game is over, stop updating the game
+      if (isGameOver) return;
 
-    // Save score to the server
-    function saveScore(score) {
-      fetch('/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: '1', score }),
-      }).then((res) => console.log('Score saved'));
+      // Move basket based on cursor input
+      if (cursors.left.isDown) {
+        basket.setVelocityX(-300); // Smooth left movement
+      } else if (cursors.right.isDown) {
+        basket.setVelocityX(300); // Smooth right movement
+      } else {
+        basket.setVelocityX(0); // Stop when no key is pressed
+      }
+
+      // Spawn objects only if enough time has passed (prevents rapid spawning)
+      if (time - lastSpawnTime > spawnInterval) {
+        spawnObject();
+        lastSpawnTime = time;
+
+        // Gradually decrease the spawn interval to increase the spawn rate
+        if (spawnInterval > 500) {
+          spawnInterval -= 10; // Decrease interval to spawn more often
+        }
+      }
+
+      // Check if any object has fallen past the basket
+      fallingObjects.getChildren().forEach((object) => {
+        if (object.y > 600) {
+          object.destroy();
+
+          if (object.texture.key === 'banana') {
+            hp--; // Decrease HP if banana is missed
+            hpText.setText(`HP: ${hp}`);
+          }
+          
+          if (hp <= 0) {
+            gameOver.call(this);
+          }
+        }
+      });
     }
 
-    function login() {
-      alert('Login functionality to be implemented.');
+    function spawnObject() {
+      const x = Phaser.Math.Between(20, 580); // Adjust for new width
+      const y = 0;
+
+      // 1 in 40 chance for a potion, otherwise spawn a banana
+      const objectType = Phaser.Math.Between(1, 40) === 1 ? 'potion' : 'banana';
+
+      let object = fallingObjects.create(x, y, objectType);
+      
+      // Set all falling objects to be square-shaped (e.g., 40x40)
+      object.setDisplaySize(40, 40); // Set object size to be square (40x40)
+
+      object.setVelocityY(initialSpawnSpeed); // Falling speed for objects
     }
 
-    gameLoop();
+    function gameOver() {
+      if (isGameOver) return;
+      
+      isGameOver = true;
+      this.physics.pause(); // Pause the physics engine
+
+      // Display Game Over text
+      this.add.text(200, 250, 'Game Over', { fontSize: '30px', fill: '#ff0000' });
+
+      // Show the "New Game" button
+      const newGameButton = this.add.text(230, 300, 'New Game', {
+        fontSize: '25px', fill: '#007bff', backgroundColor: '#fff', padding: { x: 10, y: 5 }
+      }).setInteractive()
+        .on('pointerdown', () => {
+          this.scene.restart(); // Restart the scene to start a new game
+        })
+        .on('pointerover', () => newGameButton.setStyle({ fill: '#0056b3' }))
+        .on('pointerout', () => newGameButton.setStyle({ fill: '#007bff' }));
+    }
   </script>
 </body>
 </html>

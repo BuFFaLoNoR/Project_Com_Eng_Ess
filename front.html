@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCatch with Phaser</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #e0f7fa;
+    }
+    #game-container {
+      border: 2px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script>
+    const config = {
+      type: Phaser.AUTO,
+      width: 400,
+      height: 600,
+      parent: 'game-container',
+      backgroundColor: '#e0f7fa',
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 0 },
+        },
+      },
+      scene: {
+        preload: preload,
+        create: create,
+        update: update,
+      },
+    };
+
+    const game = new Phaser.Game(config);
+
+    let basket;
+    let fallingObjects;
+    let bonusObjects;
+    let score = 0;
+    let scoreMultiplier = 1; // Normal multiplier
+    let hp = 3; // Max HP
+    let scoreText;
+    let hpText;
+    let isGameOver = false;
+    let spawnEvent;
+
+    function preload() {
+      // Load local images for basket, normal objects, and bonus objects
+      this.load.image('basket', 'asset/iboom2.png');
+      this.load.image('object', 'asset/coin.jpg');
+      this.load.image('bonus', 'asset/lg.png');
+    }
+
+    function create() {
+      // Reset variables
+      score = 0;
+      scoreMultiplier = 1;
+      hp = 3;
+      isGameOver = false;
+
+      // Score and HP text
+      scoreText = this.add.text(10, 10, 'Score: 0', {
+        fontSize: '20px',
+        fill: '#333',
+      });
+      hpText = this.add.text(300, 10, 'HP: 3', {
+        fontSize: '20px',
+        fill: '#333',
+      });
+
+      // Basket
+      basket = this.physics.add.sprite(200, 580, 'basket').setImmovable();
+      basket.body.allowGravity = false;
+
+      basket.setDisplaySize(60,80);
+
+      // Falling objects groups
+      fallingObjects = this.physics.add.group();
+      
+
+      bonusObjects = this.physics.add.group();
+
+      // Normal object collision
+      this.physics.add.collider(
+        basket,
+        fallingObjects,
+        (basket, object) => {
+          score += 1 * scoreMultiplier;
+          scoreText.setText(`Score: ${score}`);
+          object.destroy();
+        },
+        null,
+        this
+      );
+
+      // Bonus object collision
+      this.physics.add.collider(
+        basket,
+        bonusObjects,
+        (basket, bonus) => {
+          activateBonus.call(this); // Use the correct context
+          bonus.destroy();
+        },
+        null,
+        this
+      );
+
+      // Spawn objects
+      spawnEvent = this.time.addEvent({
+        delay: 1000,
+        callback: spawnObject,
+        callbackScope: this,
+        loop: true,
+      });
+
+      // Input events
+      this.input.keyboard.on('keydown-LEFT', () => {
+        basket.setVelocityX(-300);
+      });
+      this.input.keyboard.on('keydown-RIGHT', () => {
+        basket.setVelocityX(300);
+      });
+      this.input.keyboard.on('keyup', () => {
+        basket.setVelocityX(0);
+      });
+    }
+
+    function update() {
+      // Check if any object has fallen past the basket
+      fallingObjects.getChildren().forEach((object) => {
+        if (object.y > 600) {
+          object.destroy();
+          hp--;
+          hpText.setText(`HP: ${hp}`);
+          if (hp <= 0) {
+            gameOver.call(this);
+          }
+        }
+      });
+
+      bonusObjects.getChildren().forEach((bonus) => {
+        if (bonus.y > 600) {
+          bonus.destroy();
+        }
+      });
+    }
+
+    function spawnObject() {
+      const x = Phaser.Math.Between(20, 380);
+
+      // Randomly decide whether to spawn a normal object or a bonus object
+      if (Math.random() < 0.08) {
+        // Spawn bonus object (10% chance)
+        const bonus = bonusObjects.create(x, 0, 'bonus');
+        bonus.setVelocityY(200); // Set falling speed
+        bonus.setDisplaySize(40,40);
+      } else {
+        // Spawn normal object
+        const object = fallingObjects.create(x, 0, 'object');
+        object.setVelocityY(200); // Set falling speed
+        object.setDisplaySize(40,40);
+      }
+    }
+
+    const activateBonus = function () {
+      // Double the score multiplier for 10 seconds
+      scoreMultiplier = 2;
+      this.time.delayedCall(10000, () => {
+        scoreMultiplier = 1; // Reset multiplier
+      });
+    };
+
+    function gameOver() {
+      if (isGameOver) return;
+
+      isGameOver = true;
+      this.physics.pause();
+      spawnEvent.remove(false); // Stop spawning objects
+
+      // Display "Game Over" and the "New Game" button
+      this.add.text(100, 250, 'Game Over', {
+        fontSize: '30px',
+        fill: '#ff0000',
+      });
+
+      const newGameButton = this.add.text(150, 300, 'New Game', {
+        fontSize: '25px',
+        fill: '#007bff',
+        backgroundColor: '#fff',
+        padding: { x: 10, y: 5 },
+      })
+        .setInteractive()
+        .on('pointerdown', () => {
+          this.scene.restart(); // Restart the scene to start a new game
+        })
+        .on('pointerover', () => newGameButton.setStyle({ fill: '#0056b3' }))
+        .on('pointerout', () => newGameButton.setStyle({ fill: '#007bff' }));
+    }
+  </script>
+</body>
+</html>

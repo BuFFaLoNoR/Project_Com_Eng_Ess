@@ -25,159 +25,232 @@
   <script>
     const config = {
       type: Phaser.AUTO,
-      width: 600, // Make the game pane wider (increase width)
+      width: 600,
       height: 600,
       parent: 'game-container',
       backgroundColor: '#e0f7fa',
       physics: {
         default: 'arcade',
         arcade: {
-          gravity: { y: 0 }, // No gravity for the basket
-          debug: false
+          gravity: { y: 0 },
         },
       },
       scene: {
         preload: preload,
         create: create,
-        update: update
-      }
+        update: update,
+      },
     };
 
     const game = new Phaser.Game(config);
 
-    let basket;
-    let score = 0;
-    let hp = 3; // Max HP set to 3
-    let scoreText;
-    let hpText;
-    let isGameOver = false;
-    let fallingObjects;
-    let cursors;
-    let lastSpawnTime = 0;
-    const initialSpawnInterval = 1000; // Initial spawn interval for bananas
-    let spawnInterval = initialSpawnInterval;
-    const initialSpawnSpeed = 150; // Decreased speed of falling objects initially
+    let basket, scoreText, hpText, fallingObjects, isGameOver = false, isPaused = false;
+    let score = 0, hp = 3, basketSpeed = 400, objectSpeed = 200, scoreMultiplier = 1;
+    let hearts = [], continueButton, pausedText;
+    let speedBuffDuration = 0;
+    let scoreBuffDuration = 0;
+    let isSpeedBuffActive = false;
+    let speedBuffText, scoreBuffText;
 
     function preload() {
-      // Preload images
       this.load.image('basket', 'Monkey.png');
-      this.load.image('banana', 'Banana.png');
-      this.load.image('potion', 'Potion.png'); // Load potion image
+      this.load.image('object', 'Banana.png');
+      this.load.image('bonus', 'Bonus.png');
+      this.load.image('potion', 'Potion.png');
+      this.load.image('speedup', 'Speedup.png');
+      this.load.image('bomb', 'Bomb.png');
+      this.load.image('heart', 'Heart.png');
     }
 
     function create() {
-      // Initialize score, HP, and other game variables
       score = 0;
       hp = 3;
       isGameOver = false;
+      isPaused = false;
 
-      // Score and HP text
+      // UI elements
       scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#333' });
-      hpText = this.add.text(500, 10, 'HP: 3', { fontSize: '20px', fill: '#333' });
+      speedBuffText = this.add.text(10, 40, '', { fontSize: '20px', fill: '#ff0000' });
+      scoreBuffText = this.add.text(10, 70, '', { fontSize: '20px', fill: '#00ff00' });
 
-      // Create basket and set physics
+      // Basket setup
       basket = this.physics.add.sprite(300, 580, 'basket').setImmovable();
+      basket.setDisplaySize(60, 80);
       basket.body.allowGravity = false;
 
-      // Set basket to be a square shape
-      basket.setDisplaySize(40, 40); // Set the basket size to be square (40x40)
+      // Hearts for HP
+      hearts = [];
+      for (let i = 0; i < 3; i++) {
+        let heart = this.add.image(500 + i * 35, 30, 'heart').setDisplaySize(30, 30);
+        hearts.push(heart);
+      }
 
-      // Create falling objects group
+      // Falling objects group
       fallingObjects = this.physics.add.group();
 
-      // Collision detection between basket and falling objects
-      this.physics.add.collider(basket, fallingObjects, (basket, object) => {
-        if (object.texture.key === 'banana') {
-          score++; // Increase score when catching a banana
-          object.destroy();
-        } else if (object.texture.key === 'potion') {
-          if (hp < 3) {
-            hp++; // Increase HP but cap at 3
-            hpText.setText(`HP: ${hp}`);
+      // Add controls
+      this.input.keyboard.on('keydown-LEFT', () => basket.setVelocityX(-basketSpeed));
+      this.input.keyboard.on('keydown-RIGHT', () => basket.setVelocityX(basketSpeed));
+      this.input.keyboard.on('keyup', () => basket.setVelocityX(0));
+
+      // Escape key to pause
+      this.input.keyboard.on('keydown-ESC', () => {
+        if (!isGameOver) {
+          isPaused = !isPaused;
+          if (isPaused) {
+            pauseGame.call(this);
+          } else {
+            resumeGame.call(this);
           }
-          object.destroy();
         }
-        scoreText.setText(`Score: ${score}`);
       });
 
-      // Create input (left and right arrow keys)
-      cursors = this.input.keyboard.createCursorKeys();
+      // Collision handling
+      this.physics.add.collider(basket, fallingObjects, onObjectCatch, null, this);
+
+      // Spawn objects
+      this.time.addEvent({
+        delay: 1000,
+        callback: spawnObject,
+        callbackScope: this,
+        loop: true,
+      });
     }
 
-    function update(time, delta) {
-      // If game is over, stop updating the game
-      if (isGameOver) return;
+    function update() {
+      if (isGameOver || isPaused) return;
 
-      // Move basket based on cursor input
-      if (cursors.left.isDown) {
-        basket.setVelocityX(-300); // Smooth left movement
-      } else if (cursors.right.isDown) {
-        basket.setVelocityX(300); // Smooth right movement
+      // Update speed buff duration
+      if (speedBuffDuration > 0) {
+        speedBuffDuration -= 1 / 60;
+        if (!isSpeedBuffActive) {
+          basketSpeed *= 2;
+          isSpeedBuffActive = true;
+        }
       } else {
-        basket.setVelocityX(0); // Stop when no key is pressed
-      }
-
-      // Spawn objects only if enough time has passed (prevents rapid spawning)
-      if (time - lastSpawnTime > spawnInterval) {
-        spawnObject();
-        lastSpawnTime = time;
-
-        // Gradually decrease the spawn interval to increase the spawn rate
-        if (spawnInterval > 500) {
-          spawnInterval -= 10; // Decrease interval to spawn more often
+        if (isSpeedBuffActive) {
+          basketSpeed = 400;
+          isSpeedBuffActive = false;
         }
       }
 
-      // Check if any object has fallen past the basket
+      if (speedBuffDuration > 0) {
+        speedBuffText.setText(`Speed x2: ${Math.floor(speedBuffDuration / 2)}`);
+      } else {
+        speedBuffText.setText('');
+      }
+
+      if (scoreBuffDuration > 0) {
+        scoreBuffDuration -= 1 / 60;
+      } else {
+        scoreMultiplier = 1;
+        scoreBuffText.setText('');
+      }
+
+      if (scoreBuffDuration > 0) {
+        scoreBuffText.setText(`Score x2: ${Math.floor(scoreBuffDuration / 2)}`);
+      }
+
+      basket.x = Phaser.Math.Clamp(basket.x, 30, 570);
+
       fallingObjects.getChildren().forEach((object) => {
         if (object.y > 600) {
           object.destroy();
-
-          if (object.texture.key === 'banana') {
-            hp--; // Decrease HP if banana is missed
-            hpText.setText(`HP: ${hp}`);
-          }
-          
-          if (hp <= 0) {
-            gameOver.call(this);
+          if (object.isBanana) {
+            hp--;
+            updateHearts();
+            if (hp <= 0) endGame.call(this);
           }
         }
       });
     }
 
     function spawnObject() {
-      const x = Phaser.Math.Between(20, 580); // Adjust for new width
-      const y = 0;
+      if (isGameOver || isPaused) return;
 
-      // 1 in 40 chance for a potion, otherwise spawn a banana
-      const objectType = Phaser.Math.Between(1, 40) === 1 ? 'potion' : 'banana';
+      const x = Phaser.Math.Between(20, 580);
+      const type = Math.random();
 
-      let object = fallingObjects.create(x, y, objectType);
-      
-      // Set all falling objects to be square-shaped (e.g., 40x40)
-      object.setDisplaySize(40, 40); // Set object size to be square (40x40)
-
-      object.setVelocityY(initialSpawnSpeed); // Falling speed for objects
+      let object;
+      if (type < 0.1) {
+        object = fallingObjects.create(x, 0, 'potion');
+        object.isPotion = true;
+      } else if (type < 0.2) {
+        object = fallingObjects.create(x, 0, 'speedup');
+        object.isSpeedup = true;
+      } else if (type < 0.3) {
+        object = fallingObjects.create(x, 0, 'bomb');
+        object.isBomb = true;
+      } else if (type < 0.4) {
+        object = fallingObjects.create(x, 0, 'bonus');
+        object.isBonus = true;
+      } else if (type < 0.5) {
+        object = fallingObjects.create(x, 0, 'object');
+        object.isObject = true;
+      } else {
+        object = fallingObjects.create(x, 0, 'object');
+        object.isBanana = true;
+      }
+      object.setVelocityY(objectSpeed);
+      object.setDisplaySize(40, 40);
     }
 
-    function gameOver() {
-      if (isGameOver) return;
-      
+    function onObjectCatch(basket, object) {
+      if (object.isObject) {
+        score += 1 * scoreMultiplier;
+      } else if (object.isBonus) {
+        scoreMultiplier = 2;
+        scoreBuffDuration = 20;
+      } else if (object.isPotion && hp < 3) {
+        hp++;
+        updateHearts();
+      } else if (object.isBomb) {
+        hp--;
+        updateHearts();
+      } else if (object.isSpeedup) {
+        speedBuffDuration = 20;
+      } else if (object.isBanana) {
+        score += 1 * scoreMultiplier;
+      }
+
+      scoreText.setText(`Score: ${score}`);
+      object.destroy();
+
+      if (hp <= 0) endGame.call(this);
+    }
+
+    function updateHearts() {
+      for (let i = 0; i < 3; i++) {
+        if (i < hp) {
+          hearts[i].setAlpha(1);
+        } else {
+          hearts[i].setAlpha(0.2);
+        }
+      }
+    }
+
+    function endGame() {
       isGameOver = true;
-      this.physics.pause(); // Pause the physics engine
+      this.add.text(230, 250, 'Game Over', { fontSize: '30px', fill: '#ff0000' });
+      const newGameButton = this.add.text(230, 300, 'New Game', { fontSize: '30px', fill: '#007bff', backgroundColor: '#fff' })
+        .setInteractive();
+      newGameButton.on('pointerdown', () => location.reload());
+    }
 
-      // Display Game Over text
-      this.add.text(200, 250, 'Game Over', { fontSize: '30px', fill: '#ff0000' });
+    function pauseGame() {
+      this.physics.pause();
+      isPaused = true;
+      pausedText = this.add.text(230, 250, 'Game Paused', { fontSize: '30px', fill: '#ff0000' });
+      continueButton = this.add.text(230, 300, 'Continue', { fontSize: '30px', fill: '#007bff', backgroundColor: '#fff' })
+        .setInteractive();
+      continueButton.on('pointerdown', () => resumeGame.call(this));
+    }
 
-      // Show the "New Game" button
-      const newGameButton = this.add.text(230, 300, 'New Game', {
-        fontSize: '25px', fill: '#007bff', backgroundColor: '#fff', padding: { x: 10, y: 5 }
-      }).setInteractive()
-        .on('pointerdown', () => {
-          this.scene.restart(); // Restart the scene to start a new game
-        })
-        .on('pointerover', () => newGameButton.setStyle({ fill: '#0056b3' }))
-        .on('pointerout', () => newGameButton.setStyle({ fill: '#007bff' }));
+    function resumeGame() {
+      this.physics.resume();
+      isPaused = false;
+      pausedText.destroy();
+      continueButton.destroy(); // Destroy the continue button after it is clicked
     }
   </script>
 </body>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCatch with Phaser</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #e0f7fa;
+    }
+    #game-container {
+      border: 2px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script>
+    const config = {
+      type: Phaser.AUTO,
+      width: 600,
+      height: 600,
+      parent: 'game-container',
+      backgroundColor: '#e0f7fa',
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 0 },
+        },
+      },
+      scene: {
+        preload: preload,
+        create: create,
+        update: update,
+      },
+    };
+
+    const game = new Phaser.Game(config);
+
+    let basket, scoreText, hpText, fallingObjects, isGameOver = false, isPaused = false;
+    let score = 0, hp = 3, basketSpeed = 400, objectSpeed = 200, scoreMultiplier = 1;
+    let hearts = [], continueButton, pausedText;
+    let speedBuffDuration = 0;
+    let scoreBuffDuration = 0;
+    let isSpeedBuffActive = false;
+    let speedBuffText, scoreBuffText;
+    let extraSpawners = 0;
+    
+    let speedIncreaseRate = 20;
+    let speedIncreaseInterval = 10000;
+
+    function preload() {
+      this.load.image('basket', 'Monkey.png');
+      this.load.image('object', 'Banana.png');
+      this.load.image('bonus', 'Bonus.png');
+      this.load.image('potion', 'Potion.png');
+      this.load.image('speedup', 'Speedup.png');
+      this.load.image('bomb', 'Bomb.png');
+      this.load.image('heart', 'Heart.png');
+    }
+
+    function create() {
+      score = 0;
+      hp = 3;
+      isGameOver = false;
+      isPaused = false;
+      extraSpawners = 0;
+
+      // UI elements
+      scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#333' });
+      speedBuffText = this.add.text(10, 40, '', { fontSize: '20px', fill: '#ff0000' });
+      scoreBuffText = this.add.text(10, 70, '', { fontSize: '20px', fill: '#00ff00' });
+
+      // Basket setup
+      basket = this.physics.add.sprite(300, 580, 'basket').setImmovable();
+      basket.setDisplaySize(60, 80);
+      basket.body.allowGravity = false;
+
+      // Hearts for HP
+      hearts = [];
+      for (let i = 0; i < 3; i++) {
+        let heart = this.add.image(500 + i * 35, 30, 'heart').setDisplaySize(30, 30);
+        hearts.push(heart);
+      }
+
+      // Falling objects group
+      fallingObjects = this.physics.add.group();
+
+      // Add controls
+      this.input.keyboard.on('keydown-LEFT', () => basket.setVelocityX(-basketSpeed));
+      this.input.keyboard.on('keydown-RIGHT', () => basket.setVelocityX(basketSpeed));
+      this.input.keyboard.on('keyup', () => basket.setVelocityX(0));
+
+      // Escape key to pause
+      this.input.keyboard.on('keydown-ESC', () => {
+        if (!isGameOver) {
+          isPaused = !isPaused;
+          if (isPaused) {
+            pauseGame.call(this);
+          } else {
+            resumeGame.call(this);
+          }
+        }
+      });
+
+      // Collision handling
+      this.physics.add.collider(basket, fallingObjects, onObjectCatch, null, this);
+
+      // Spawn objects
+      this.time.addEvent({
+        delay: 1000,
+        callback: spawnObject,
+        callbackScope: this,
+        loop: true,
+      });
+
+      // Gradually increase object speed
+      this.speedIncreaseEvent = this.time.addEvent({
+        delay: speedIncreaseInterval,
+        callback: increaseSpeed,
+        callbackScope: this,
+        loop: true,
+      });
+    }
+
+    function update() {
+      if (isGameOver || isPaused) return;
+
+      // Update speed buff duration
+      if (speedBuffDuration > 0) {
+        speedBuffDuration -= 1 / 60;
+        if (!isSpeedBuffActive) {
+          basketSpeed *= 2;
+          isSpeedBuffActive = true;
+        }
+      } else {
+        if (isSpeedBuffActive) {
+          basketSpeed = 400;
+          isSpeedBuffActive = false;
+        }
+      }
+
+      if (speedBuffDuration > 0) {
+        speedBuffText.setText(`Speed x2: ${Math.floor(speedBuffDuration / 2)}`);
+      } else {
+        speedBuffText.setText('');
+      }
+
+      if (scoreBuffDuration > 0) {
+        scoreBuffDuration -= 1 / 60;
+      } else {
+        scoreMultiplier = 1;
+        scoreBuffText.setText('');
+      }
+
+      if (scoreBuffDuration > 0) {
+        scoreBuffText.setText(`Score x2: ${Math.floor(scoreBuffDuration / 2)}`);
+      }
+
+      basket.x = Phaser.Math.Clamp(basket.x, 30, 570);
+
+      fallingObjects.getChildren().forEach((object) => {
+        if (object.y > 600) {
+          object.destroy();
+          if (object.isBanana) {
+            hp--;
+            updateHearts();
+            if (hp <= 0) endGame.call(this);
+          }
+        }
+      });
+
+      checkExtraSpawner.call(this);
+    }
+
+    function spawnObject() {
+      if (isGameOver || isPaused) return;
+
+      const x = Phaser.Math.Between(20, 580);
+      const type = Math.random();
+
+      let object;
+      if (type < 0.1) {
+        object = fallingObjects.create(x, 0, 'potion');
+        object.isPotion = true;
+      } else if (type < 0.2) {
+        object = fallingObjects.create(x, 0, 'speedup');
+        object.isSpeedup = true;
+      } else if (type < 0.3) {
+        object = fallingObjects.create(x, 0, 'bomb');
+        object.isBomb = true;
+      } else if (type < 0.4) {
+        object = fallingObjects.create(x, 0, 'bonus');
+        object.isBonus = true;
+      } else if (type < 0.5) {
+        object = fallingObjects.create(x, 0, 'object');
+        object.isObject = true;
+      } else {
+        object = fallingObjects.create(x, 0, 'object');
+        object.isBanana = true;
+      }
+      object.setVelocityY(objectSpeed);
+      object.setDisplaySize(40, 40);
+    }
+
+    function onObjectCatch(basket, object) {
+      if (object.isObject) {
+        score += 1 * scoreMultiplier;
+      } else if (object.isBonus) {
+        scoreMultiplier = 2;
+        scoreBuffDuration = 20;
+      } else if (object.isPotion && hp < 3) {
+        hp++;
+        updateHearts();
+      } else if (object.isBomb) {
+        hp--;
+        updateHearts();
+      } else if (object.isSpeedup) {
+        speedBuffDuration = 20;
+      } else if (object.isBanana) {
+        score += 1 * scoreMultiplier;
+      }
+
+      scoreText.setText(`Score: ${score}`);
+      object.destroy();
+
+      if (hp <= 0) endGame.call(this);
+    }
+
+    function updateHearts() {
+      for (let i = 0; i < 3; i++) {
+        if (i < hp) {
+          hearts[i].setAlpha(1);
+        } else {
+          hearts[i].setAlpha(0.2);
+        }
+      }
+    }
+
+    function endGame() {
+      isGameOver = true;
+      this.physics.pause();
+      // Stop all physics and timers.
+      
+
+      this.add.text(230, 250, 'Game Over', { fontSize: '30px', fill: '#ff0000' });
+      const newGameButton = this.add.text(230, 300, 'New Game', { fontSize: '30px', fill: '#007bff', backgroundColor: '#fff' })
+        .setInteractive();
+      newGameButton.on('pointerdown', () => location.reload());
+    }
+
+    function pauseGame() {
+      this.physics.pause();
+      isPaused = true;
+      pausedText = this.add.text(230, 250, 'Game Paused', { fontSize: '30px', fill: '#ff0000' });
+      continueButton = this.add.text(230, 300, 'Continue', { fontSize: '30px', fill: '#007bff', backgroundColor: '#fff' })
+        .setInteractive();
+      continueButton.on('pointerdown', () => resumeGame.call(this));
+    }
+
+    function resumeGame() {
+      this.physics.resume();
+      isPaused = false;
+      pausedText.destroy();
+      continueButton.destroy(); // Destroy the continue button after it is clicked
+    }
+
+    function checkExtraSpawner() {
+      if (isGameOver) return;
+      while (score >= 50 * (extraSpawners + 1)) {
+        extraSpawners++;
+        this.time.addEvent({
+          delay: 1000,
+          callback: spawnObject,
+          callbackScope: this,
+          loop: true,
+        });
+      }
+    }
+
+    function increaseSpeed() {
+      if (isGameOver) return;
+      //baseSpeed += speedIncreaseRate;
+      //basketSpeed = baseSpeed * 1.5;
+      objectSpeed +=speedIncreaseRate;
+      basketSpeed +=(speedIncreaseRate*1.5);
+    }
+  </script>
+</body>
+</html>

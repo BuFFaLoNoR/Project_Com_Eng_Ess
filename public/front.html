@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCatch</title>
+  <link rel="stylesheet" href="styles/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  
+  <!-- Import game logic -->
+  <script type="module" src="script/api.js"></script>
+  <script type="module" src="script/game.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Fredoka One', sans-serif;
+    }
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-image: url('asset/menu_back3.png'); /* Set the background image */
+      background-size: cover; /* Make the background image cover the entire viewport */
+      background-position: center; /* Center the background image */
+    }
+    #game-container {
+      border: 2px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- This div is where the Phaser game will render -->
+    <div id="game"></div>
+  </div>
+
+  
+</body>
+</html>

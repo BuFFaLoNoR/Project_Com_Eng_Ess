@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <title>Top 10 High Scores</title>
+  <style>
+    /* General reset and minimalist design */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Fredoka One', sans-serif;
+    }
+
+    body {
+      background-image: url('asset/menu_back.png'); /* Game background */
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: normal;
+      margin-bottom: 20px;
+      color: #ff6f4e; /* Game-themed color */
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 80%;
+      margin-bottom: 30px;
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    th, td {
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 1rem;
+    }
+
+    th {
+      background-color: #ff6f4e;
+      color: #fff;
+    }
+
+    tr:nth-child(even) {
+      background-color: #333;
+    }
+
+    tr:hover {
+      background-color: #444;
+    }
+
+    /* Back to Game button styling */
+    #back-to-game {
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      color: #fff;
+      background-color: #ff6f4e;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s;
+    }
+
+    #back-to-game:hover {
+      background-color: #d64e2a;
+      transform: translateY(-3px);
+    }
+
+    #back-to-game:active {
+      background-color: #b63b1b;
+      transform: translateY(3px);
+    }
+
+    /* Responsive design for smaller screens */
+    @media (max-width: 600px) {
+      table {
+        width: 90%;
+      }
+
+      #back-to-game {
+        font-size: 1rem;
+        padding: 10px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Top 10 High Scores</h2>
+  <table id="highscores-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Player Name</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Highscores will be dynamically populated here -->
+    </tbody>
+  </table>
+
+  <!-- Button to go back to the game -->
+  <button id="back-to-game">Back to Game</button>
+
+  <script src="script/highscores.js"></script> <!-- Separate JS file to handle highscore fetching -->
+  <script>
+    // Add event listener to the "Back to Game" button
+    document.getElementById('back-to-game').addEventListener('click', function() {
+      window.location.href = 'menu.html'; // Navigate back to the game page
+    });
+
+    // Fetch high scores dynamically (use your backend API or database)
+    window.onload = function() {
+      // This would be replaced by your actual data fetching logic
+      const highscores = []; // Empty array - populate this with real data
+
+      const tableBody = document.querySelector('#highscores-table tbody');
+      highscores.forEach(score => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${score.rank}</td><td>${score.player}</td><td>${score.score}</td>`;
+        tableBody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>

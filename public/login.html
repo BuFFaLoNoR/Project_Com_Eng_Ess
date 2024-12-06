@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <title>Login - QuickCatch</title>
+  <style>
+    /* Global styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Fredoka One', sans-serif;
+    }
+
+    body {
+      background-image: url('asset/menu_back.png'); /* Game background */
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      margin: 0;
+    }
+
+    #login-container {
+      background: rgba(0, 0, 0, 0.7); /* Dark background with transparency */
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6); /* Glowing text effect */
+    }
+
+    form div {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    label {
+      font-size: 1rem;
+      margin-bottom: 8px;
+      color: #f4f4f9;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 2px solid #ff6f4e; /* Game theme orange border */
+      background-color: #f0f0f0;
+      color: #333;
+      box-sizing: border-box;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      border-color: #ff6f4e;
+      outline: none;
+      background-color: #fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.2rem;
+      background-color: #ff6f4e; /* Same color as previous buttons */
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      text-transform: uppercase;
+      color: #fff;
+      transition: all 0.3s;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    button:hover {
+      background-color: #d64e2a;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      background-color: #b63b1b;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      transform: translateY(2px);
+    }
+
+    p {
+      margin-top: 20px;
+      font-size: 1rem;
+    }
+
+    a {
+      color: #ff6f4e;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      #login-container {
+        padding: 25px;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      input, button {
+        font-size: 1rem;
+        padding: 10px;
+      }
+
+      button {
+        font-size: 1.1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #login-container {
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+      }
+
+      input, button {
+        font-size: 0.9rem;
+        padding: 8px;
+      }
+
+      button {
+        font-size: 1rem;
+      }
+
+      p {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-container">
+    <h2>Login</h2>
+    <form id="login-form">
+      <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div>
+        <button type="submit">Login</button>
+      </div>
+    </form>
+    <p>Don't have an account? <a href="register.html">Register here</a></p>
+  </div>
+
+  <script type="module">
+    import { loginUser } from './script/api.js';
+
+    document.getElementById('login-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      loginUser(username, password)
+        .then(data => {
+          if (data.message === 'Login successful') {
+            alert('Login successful! Redirecting to the game...');
+            // Store the username in localStorage and redirect to the game page
+            localStorage.setItem('username', username);
+            window.location.href = 'menu.html';
+          }
+        })
+        .catch(() => {
+          alert('Login failed! Please check your username and password.');
+        });
+    });
+  </script>
+</body>
+</html>

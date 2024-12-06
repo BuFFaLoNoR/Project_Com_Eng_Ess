@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <title>Customize Your Game</title>
+  <style>
+    /* Global Font */
+    * {
+      font-family: 'Fredoka One', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-image: url('asset/menu_back.png'); /* Set the background image */
+      background-size: cover; /* Make the background image cover the entire viewport */
+      background-position: center; /* Center the background image */
+      background-attachment: fixed; /* Keep the background fixed while scrolling */
+    }
+
+    /* White font stroke */
+    h1, h2 {
+      color: black;
+      font-size: 32px;
+      text-shadow:
+        -1px -1px 0 white,  
+        1px -1px 0 white,
+        -1px 1px 0 white,
+        1px 1px 0 white;
+    }
+
+    /* Back button style */
+    button.back-button {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      padding: 15px 30px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      background-color: #ff6f4e;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 300px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    button.back-button:hover {
+      background-color: #d64e2a;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    button.back-button:active {
+      background-color: #b63b1b;
+      transform: translateY(2px);
+    }
+
+    .selector-container {
+      margin: 20px;
+      text-align: center;
+    }
+
+    .preview {
+      margin: 10px auto;
+      width: 100px;
+      height: 100px;
+      border: 2px solid #000;
+      background-size: cover;
+      background-position: center;
+      display: block;
+    }
+
+    select {
+      font-size: 18px;
+      padding: 5px;
+    }
+
+    /* Start button style */
+    button {
+      margin: 10px;
+      padding: 15px 30px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      background-color: #ff6f4e;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 300px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover {
+      background-color: #d64e2a;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    button:active {
+      background-color: #b63b1b;
+      transform: translateY(2px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      h1, h2 {
+        font-size: 24px;
+      }
+
+      .preview {
+        width: 80px;
+        height: 80px;
+      }
+
+      select {
+        font-size: 16px;
+      }
+
+      button {
+        width: 250px;
+        font-size: 20px;
+      }
+
+      button.back-button {
+        width: 250px;
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1, h2 {
+        font-size: 20px;
+      }
+
+      .preview {
+        width: 60px;
+        height: 60px;
+      }
+
+      select {
+        font-size: 14px;
+      }
+
+      button {
+        width: 220px;
+        font-size: 18px;
+      }
+
+      button.back-button {
+        width: 220px;
+        font-size: 18px;
+      }
+
+      .selector-container {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Customize Your Game</h1>
+  
+  <div class="selector-container">
+    <h2>Select Background</h2>
+    <div id="background-preview" class="preview"></div>
+    <select id="background-selector">
+      <option value="bg1" data-preview="asset/prev/bg1.png">Background 1</option>
+      <option value="bg2" data-preview="asset/prev/bg2.png">Background 2</option>
+      <option value="bg3" data-preview="asset/prev/bg3.png">Background 3</option>
+    </select>
+  </div>
+
+  <div class="selector-container">
+    <h2>Select Falling Objects</h2>
+    <div id="objects-preview" class="preview"></div>
+    <select id="objects-selector">
+      <option value="set1" data-preview="asset/prev/objects_set1.png">Objects Set 1</option>
+      <option value="set2" data-preview="asset/prev/objects_set2.png">Objects Set 2</option>
+      <option value="set3" data-preview="asset/prev/objects_set3.png">Objects Set 3</option>
+    </select>
+  </div>
+
+  <div class="selector-container">
+    <h2>Select Monkey</h2>
+    <div id="basket-preview" class="preview"></div>
+    <select id="basket-selector">
+      <option value="basket1" data-preview="asset/prev/basket1.png">Monkey 1</option>
+      <option value="basket2" data-preview="asset/prev/basket2.png">Monkey 2</option>
+      <option value="basket3" data-preview="asset/prev/basket3.png">Monkey 3</option>
+    </select>
+  </div>
+
+  <button id="start-game-button">Start Game</button>
+
+  <script>
+    // Update preview on selection change
+    function updatePreview(selectorId, previewId) {
+      const selector = document.getElementById(selectorId);
+      const preview = document.getElementById(previewId);
+      selector.addEventListener('change', function () {
+        const selectedOption = selector.options[selector.selectedIndex];
+        const previewImage = selectedOption.getAttribute('data-preview');
+        preview.style.backgroundImage = `url(${previewImage})`;
+      });
+      // Initialize with the first option
+      selector.dispatchEvent(new Event('change'));
+    }
+
+    // Initialize all previews
+    updatePreview('background-selector', 'background-preview');
+    updatePreview('objects-selector', 'objects-preview');
+    updatePreview('basket-selector', 'basket-preview');
+
+    // Start game button functionality
+    document.getElementById('start-game-button').addEventListener('click', function () {
+      const background = document.getElementById('background-selector').value;
+      const objects = document.getElementById('objects-selector').value;
+      const basket = document.getElementById('basket-selector').value;
+      window.location.href = `front.html?background=${background}&objects=${objects}&basket=${basket}`;
+    });
+  </script>
+
+  <button class="back-button" onclick="window.location.href='menu.html'">Back</button>
+</body>
+</html>

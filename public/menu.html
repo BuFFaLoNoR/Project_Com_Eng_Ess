@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu</title>
+  <!-- Link to Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Fredoka One', sans-serif;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      background-image: url('asset/menu_back.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #title-image {
+      position: absolute;
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      max-width: 100%;
+      height: auto;
+      z-index: 1;
+    }
+
+    .buttons-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      margin-top: 20%; /* Adjust margin-top to control button position */
+    }
+
+    button {
+      margin: 15px 0;
+      padding: 20px 40px;
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      background-color: #ff6f4e;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 300px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    button:hover {
+      background-color: #d64e2a;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    button:active {
+      background-color: #b63b1b;
+      transform: translateY(2px);
+    }
+
+    #logout-button {
+      margin-top: 20px;
+      padding: 20px 40px;
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      background-color: #dc3545;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 300px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #logout-button:hover {
+      background-color: #c82333;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    #logout-button:active {
+      background-color: #bd2130;
+      transform: translateY(2px);
+    }
+
+    /* Media Queries for smaller screens */
+    @media (max-width: 768px) {
+      body {
+        background-size: cover;
+        justify-content: flex-start;
+      }
+
+      #title-image {
+        top: 3%;  /* Move title up slightly */
+        transform: translateX(-50%) scale(0.7);
+      }
+
+      .buttons-container {
+        margin-top: 30%; /* Adjust button position for smaller screens */
+      }
+
+      button {
+        width: 80%;  /* Make buttons take up more width */
+        font-size: 24px;  /* Adjust button font size */
+      }
+
+      #logout-button {
+        width: 80%;  /* Same adjustment for logout button */
+      }
+    }
+
+    @media (max-width: 480px) {
+      #title-image {
+        top: 5%;  /* Adjust further for very small screens */
+        transform: translateX(-50%) scale(0.6);
+      }
+
+      .buttons-container {
+        margin-top: 40%; /* Further adjust button position */
+      }
+
+      button {
+        width: 90%;  /* Make buttons take almost full width */
+        font-size: 22px;  /* Adjust button font size */
+      }
+
+      #logout-button {
+        width: 90%;  /* Same adjustment for logout button */
+      }
+    }
+
+
+
+      </style>
+    </head>
+    <body>
+      <!-- Title Image -->
+      <img id="title-image" src="asset/title.png" alt="Game Title">
+
+      <!-- Buttons container -->
+      <div class="buttons-container">
+        <button id="play-button">Play</button>
+        <button id="scoreboard-button">Scoreboard</button>
+        <!-- Logout Button -->
+        <button id="logout-button">Logout</button>
+      </div>
+
+      <script>
+        // JavaScript to handle Play button click event
+        document.getElementById('play-button').addEventListener('click', function() {
+          window.location.href = 'main.html'; // Navigate to main.html
+        });
+
+        // JavaScript to handle Scoreboard button click event
+        document.getElementById('scoreboard-button').addEventListener('click', function() {
+          window.location.href = 'table.html'; // Navigate to table.html
+        });
+
+        // JavaScript to handle Logout button click event
+        document.getElementById('logout-button').addEventListener('click', function() {
+          // Redirect to the login page (replace with your actual logout logic if needed)
+          window.location.href = 'login.html'; // Navigate to login page
+        });
+  </script>
+</body>
+</html>

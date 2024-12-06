@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <title>Register - QuickCatch</title>
+  <style>
+    /* Global styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Fredoka One', sans-serif;
+    }
+
+    body {
+      background-image: url('asset/menu_back.png'); /* Game background */
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      margin: 0;
+    }
+
+    #register-container {
+      background: rgba(0, 0, 0, 0.7); /* Dark background with transparency */
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6); /* Glowing text effect */
+    }
+
+    form div {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    label {
+      font-size: 1rem;
+      margin-bottom: 8px;
+      color: #f4f4f9;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 2px solid #ff6f4e; /* Game theme orange border */
+      background-color: #f0f0f0;
+      color: #333;
+      box-sizing: border-box;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      border-color: #ff6f4e;
+      outline: none;
+      background-color: #fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.2rem;
+      background-color: #ff6f4e; /* Same color as previous buttons */
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      text-transform: uppercase;
+      color: #fff;
+      transition: all 0.3s;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    button:hover {
+      background-color: #d64e2a;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      background-color: #b63b1b;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      transform: translateY(2px);
+    }
+
+    p {
+      margin-top: 20px;
+      font-size: 1rem;
+    }
+
+    a {
+      color: #ff6f4e;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      #register-container {
+        padding: 25px;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      input, button {
+        font-size: 1rem;
+        padding: 10px;
+      }
+
+      button {
+        font-size: 1.1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #register-container {
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+      }
+
+      input, button {
+        font-size: 0.9rem;
+        padding: 8px;
+      }
+
+      button {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="register-container">
+    <h2>Create an Account</h2>
+    <form id="register-form">
+      <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div>
+        <button type="submit">Register</button>
+      </div>
+    </form>
+    <p>Already have an account? <a href="login.html">Login here</a></p>
+  </div>
+
+  <script type="module">
+    import { registerUser, checkUsernameAvailability } from './script/api.js';
+
+    // Attach event listener to handle registration form submission
+    document.getElementById('register-form').addEventListener('submit', async function(event) {
+      event.preventDefault();  // Prevent the default form submission
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        // Check if the username is available first
+        const isAvailable = await checkUsernameAvailability(username);
+        
+        if (!isAvailable) {
+          // If the username is already taken, alert the user
+          alert('Username is already taken. Please choose a different one.');
+        } else {
+          // If the username is available, call the registerUser function
+          const registerResponse = await registerUser(username, password);
+
+          if (registerResponse?.message === 'User registered successfully') {
+            // Show registration success message
+            alert('Registration successful! Redirecting to the login page...');
+            
+            // Redirect to the login page after successful registration
+            window.location.href = 'login.html';
+          } else {
+            alert('Registration failed. Please try again.');
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Something went wrong. Please try again later.');
+      }
+    });
+  </script>
+</body>
+</html>
